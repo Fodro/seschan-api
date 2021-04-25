@@ -20,7 +20,8 @@ finally:
 
 class Database():
 	GET_BOARDS_QUERY = "SELECT * FROM boards"
-	GET_THREADS_QUERY = "SELECT * FROM threads WHERE board_id={}" 
+	GET_THREADS_QUERY = "SELECT * FROM threads"
+	GET_THREADS_BY_BOARD_QUERY = "SELECT * FROM threads WHERE board_id={}" 
 
 	CREATE_THREADS_TABLE = '''CREATE TABLE IF NOT EXISTS threads(
             id INTEGER PRIMARY KEY,
@@ -130,8 +131,9 @@ class Database():
 		updated_index = self.thread_props_index["updated"]
 		board_id_index = self.thread_props_index["board_id"]
 		op_id_index = self.thread_props_index["op_id"]
+		pinned_index = self.thread_props_index["pinned"]
 
-		self.cursor.execute(self.GET_THREADS_QUERY.format(board_id))
+		self.cursor.execute(self.GET_THREADS_BY_BOARD_QUERY.format(board_id))
 		record = self.cursor.fetchall()
 		for item in record:
 			thread = {
@@ -140,7 +142,67 @@ class Database():
 				"updated": item[updated_index],
 				"board_id": item[board_id_index],
 				"op_id": item[op_id_index],
+				"pinned": item[pinned_index],
 			}
 			response.append(thread)
-		
+		response.sort(key=lambda item: item["updated"])
+
 		return response
+
+	def get_thread(self, board_name, thread_id_str):
+		thread_id = int(thread_id_str)
+		response = None
+
+		board_id = -1
+		board_name_index = self.board_props_index["board_name"]
+		board_id_index = self.board_props_index["id"]
+
+		op_id = -1
+		id_index = self.thread_props_index["id"]
+		created_index = self.thread_props_index["created"]
+		op_id_index = self.thread_props_index["op_id"]
+
+		self.cursor.execute(self.GET_BOARDS_QUERY)
+		record = self.cursor.fetchall()
+
+		for item in record:
+			if board_name == item[board_name_index]:
+				board_id = item[board_id_index]
+				break
+		
+		if board_id == -1:
+			return "404"
+
+		self.cursor.execute(self.GET_THREADS_BY_BOARD_QUERY.format(board_id))
+		record = self.cursor.fetchall()
+
+		for item in record:
+			if thread_id == item[id_index]:
+				op_id = item[op_id_index]
+				response = {
+					"id": item[id_index],
+					"created": item[created_index],
+					"op_post": None,
+					"replies": [],
+				}
+				break
+		
+		if op_id == -1:
+			return "404"
+		
+		response["replies"] = self.get_replies(thread_id)
+
+		for number in range(len(response["replies"])):
+			item = response["replies"][number]
+			if item["id"] == op_id:
+				response["op_post"] = response["replies"].pop(number)
+				break
+		
+		if response["op_post"] == None:
+			return "404"
+
+		return response
+
+
+	def get_replies(self, thread_id):
+		return [{"id": 1}, {"id": 2}]
