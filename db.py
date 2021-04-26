@@ -24,6 +24,7 @@ class Database():
 	GET_THREADS_BY_BOARD_QUERY = "SELECT * FROM threads WHERE board_id={}" 
 	GET_REPLIES_BY_THREAD_QUERY = "SELECT * FROM replies WHERE thread_id={}"
 	GET_REPLIES_BY_REPLY_QUERY = "SELECT * FROM replies WHERE reply_to={}"
+	GET_MEDIA_BY_REPLY_QUERY = "SELECT * FROM media WHERE post_id={}"
 
 	CREATE_THREADS_TABLE = '''CREATE TABLE IF NOT EXISTS threads(
             id INTEGER PRIMARY KEY,
@@ -49,8 +50,13 @@ class Database():
             body TEXT NOT NULL,
             reply_to INTEGER,
             thread_id INTEGER NOT NULL
-        );
-	'''
+        );'''
+	CREATE_MEDIA_TABLE = '''CREATE TABLE IF NOT EXISTS media(
+			id INTEGER PRIMARY KEY,
+			post_id INTEGER NOT NULL,
+			media_url TEXT NOT NULL UNIQUE,
+			media_type TEXT NOT NULL
+		);'''
 	
 	board_props_index = {
 		"id": 0,
@@ -75,6 +81,12 @@ class Database():
 		"reply_to": 0,
 		"thread_id": 0,
 	}
+	media_props_index = {
+		"id": 0,
+		"post_id": 0,
+		"media_url": 0,
+		"media_type": 0,
+	}
 	
 	cursor
 	sqlite_connection
@@ -87,6 +99,7 @@ class Database():
 		self.cursor.execute(self.CREATE_BOARDS_TABLE)
 		self.cursor.execute(self.CREATE_THREADS_TABLE)
 		self.cursor.execute(self.CREATE_REPLIES_TABLE)
+		self.cursor.execute(self.CREATE_MEDIA_TABLE)
 		
 		self.cursor.execute("SELECT name FROM PRAGMA_TABLE_INFO(\"boards\");")
 		record = self.cursor.fetchall()
@@ -105,6 +118,12 @@ class Database():
 		for number in range(len(record)):
 			item = record[number][0]
 			self.reply_props_index[item] = number
+
+		self.cursor.execute("SELECT name FROM PRAGMA_TABLE_INFO(\"media\");")
+		record = self.cursor.fetchall()
+		for number in range(len(record)):
+			item = record[number][0]
+			self.media_props_index[item] = number
 
 	def get_boards(self):
 		response = {
@@ -247,6 +266,7 @@ class Database():
 				"author": item[author_index],
 				"body": item[body_index],
 				"replies": [],
+				"media": self.get_media(item[id_index]),
 			}
 
 			self.cursor.execute(self.GET_REPLIES_BY_REPLY_QUERY.format(item[id_index]))
@@ -254,6 +274,21 @@ class Database():
 			reply["replies"] = list(map(lambda sub_reply: sub_reply[id_index], reply_record))
 
 			response.append(reply)
+
+		return response
+
+	
+	def get_media(self, reply_id):
+		media_url_index = self.media_props_index["media_url"]
+		media_type_index = self.media_props_index["media_type"]
+
+		self.cursor.execute(self.GET_MEDIA_BY_REPLY_QUERY.format(reply_id))
+		response = self.cursor.fetchall()
+		filter = lambda item: {
+			"url": item[media_url_index],
+			"type": item[media_type_index],
+		}
+		response = list(map(filter, response))
 
 		return response
 
