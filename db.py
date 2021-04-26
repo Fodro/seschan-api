@@ -22,6 +22,8 @@ class Database():
 	GET_BOARDS_QUERY = "SELECT * FROM boards"
 	GET_THREADS_QUERY = "SELECT * FROM threads"
 	GET_THREADS_BY_BOARD_QUERY = "SELECT * FROM threads WHERE board_id={}" 
+	GET_REPLIES_BY_THREAD_QUERY = "SELECT * FROM replies WHERE thread_id={}"
+	GET_REPLIES_BY_REPLY_QUERY = "SELECT * FROM replies WHERE reply_to={}"
 
 	CREATE_THREADS_TABLE = '''CREATE TABLE IF NOT EXISTS threads(
             id INTEGER PRIMARY KEY,
@@ -40,6 +42,15 @@ class Database():
             created_at DATETIME NOT NULL
         );
 	'''
+	CREATE_REPLIES_TABLE = '''CREATE TABLE IF NOT EXISTS replies(
+            id INTEGER PRIMARY KEY,
+            posted DATETIME NOT NULL,
+            author TEXT NOT NULL,
+            body TEXT NOT NULL,
+            reply_to INTEGER,
+            thread_id INTEGER NOT NULL
+        );
+	'''
 	
 	board_props_index = {
 		"id": 0,
@@ -56,6 +67,14 @@ class Database():
 		"op_id": 0,
 		"pinned": 0,
 	}
+	reply_props_index = {
+		"id": 0,
+		"posted": 0,
+		"author": 0,
+		"body": 0,
+		"reply_to": 0,
+		"thread_id": 0,
+	}
 	
 	cursor
 	sqlite_connection
@@ -67,6 +86,7 @@ class Database():
 
 		self.cursor.execute(self.CREATE_BOARDS_TABLE)
 		self.cursor.execute(self.CREATE_THREADS_TABLE)
+		self.cursor.execute(self.CREATE_REPLIES_TABLE)
 		
 		self.cursor.execute("SELECT name FROM PRAGMA_TABLE_INFO(\"boards\");")
 		record = self.cursor.fetchall()
@@ -79,6 +99,12 @@ class Database():
 		for number in range(len(record)):
 			item = record[number][0]
 			self.thread_props_index[item] = number
+
+		self.cursor.execute("SELECT name FROM PRAGMA_TABLE_INFO(\"replies\");")
+		record = self.cursor.fetchall()
+		for number in range(len(record)):
+			item = record[number][0]
+			self.reply_props_index[item] = number
 
 	def get_boards(self):
 		response = {
@@ -205,4 +231,29 @@ class Database():
 
 
 	def get_replies(self, thread_id):
-		return [{"id": 1}, {"id": 2}]
+		response = []
+
+		id_index = self.reply_props_index["id"]
+		posted_index = self.reply_props_index["posted"]
+		author_index = self.reply_props_index["author"]
+		body_index = self.reply_props_index["body"]
+
+		self.cursor.execute(self.GET_REPLIES_BY_THREAD_QUERY.format(thread_id))
+		record = self.cursor.fetchall()
+		for item in record:
+			reply = {
+				"id": item[id_index],
+				"posted": item[posted_index],
+				"author": item[author_index],
+				"body": item[body_index],
+				"replies": [],
+			}
+
+			self.cursor.execute(self.GET_REPLIES_BY_REPLY_QUERY.format(item[id_index]))
+			reply_record = self.cursor.fetchall()
+			reply["replies"] = list(map(lambda sub_reply: sub_reply[id_index], reply_record))
+
+			response.append(reply)
+
+		return response
+
