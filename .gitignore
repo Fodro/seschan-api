@@ -2,3 +2,8 @@ seschan*
 /venv/
 /.vscode/
 /__pycache__
+/media/
+img to bin.py
+out
+*.png
+*.jpg
