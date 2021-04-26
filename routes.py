@@ -1,5 +1,7 @@
 from aiohttp import web
 import json
+
+from aiohttp.web_response import Response
 from db import db
 
 routes = web.RouteTableDef()
@@ -56,12 +58,29 @@ async def new_thread_handler(request: web.BaseRequest):
 			"board_name": request.match_info['board_name'],
 			"op": op,
 		}	
+		response = db.new_thread(data)
 	except:
 		raise web.HTTPBadRequest()
 
-	response = db.new_thread(data)
 
 	if response == '404':
 		raise web.HTTPNotFound()
 
 	return web.json_response(response)
+
+@routes.post("/{thread_id}/new_reply")
+async def new_reply_handler(request: web.BaseRequest):
+	try:
+		body = await request.json()
+		thread_id = request.match_info['thread_id']
+		reply_data = {
+			"author": body["author"],
+			"body": body["body"],
+			"media": body["media"],
+			"reply_to": body["reply_to"],
+		}
+		response = db.new_reply(thread_id, reply_data)
+	except:
+		raise web.HTTPBadRequest()
+
+	return web.json_response({"status":"ok"})

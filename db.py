@@ -338,6 +338,8 @@ class Database():
 		
 		record = self.cursor.fetchall()[0]
 
+		self.sqlite_connection.commit()
+
 		return self.get_thread(thread_data["board_name"], thread_id)
 
 		
@@ -355,6 +357,9 @@ class Database():
 		self.cursor.execute(self.NEW_REPLY_MUTATION.format(posted_time, reply_data["author"], reply_data["body"], reply_to,  thread_id))
 		post_id = self.cursor.fetchall()[0][id_index]
 		self.new_media(post_id, reply_data["media"])
+
+		self.sqlite_connection.commit()
+
 
 		return post_id
 
@@ -376,6 +381,8 @@ class Database():
 
 			self.cursor.execute(self.NEW_MEDIA_MUTATION.format(post_id, media_url, media_type))
 			record = self.cursor.fetchall()
+
+			self.sqlite_connection.commit()
 
 		return 0
 
