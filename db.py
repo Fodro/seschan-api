@@ -1,4 +1,7 @@
 import sqlite3
+from datetime import datetime
+from tzlocal import get_localzone
+import nanoid
 
 try:
     sqlite_connection = sqlite3.connect('seschan.db')
@@ -25,6 +28,12 @@ class Database():
 	GET_REPLIES_BY_THREAD_QUERY = "SELECT * FROM replies WHERE thread_id={}"
 	GET_REPLIES_BY_REPLY_QUERY = "SELECT * FROM replies WHERE reply_to={}"
 	GET_MEDIA_BY_REPLY_QUERY = "SELECT * FROM media WHERE post_id={}"
+	
+	NEW_THREAD_MUTATION = "INSERT INTO threads (created, updated, board_id, op_id, pinned) VALUES ({},{},{},{},FALSE) RETURNING *;"
+	NEW_REPLY_MUTATION = "INSERT INTO replies (posted, author, body, reply_to, thread_id) VALUES ({},\"{}\",\"{}\",{},{}) RETURNING *;"
+	NEW_MEDIA_MUTATION = "INSERT INTO media (post_id, media_url, media_type) VALUES ({}, \"{}\", \"{}\") RETURNING *;"
+
+	UPDATE_OP_ID = "UPDATE threads SET op_id={} WHERE id={} RETURNING *;"
 
 	CREATE_THREADS_TABLE = '''CREATE TABLE IF NOT EXISTS threads(
             id INTEGER PRIMARY KEY,
@@ -125,6 +134,12 @@ class Database():
 			item = record[number][0]
 			self.media_props_index[item] = number
 
+
+	def stop(self):
+		print("\nClosing DB...")
+		self.sqlite_connection.close()
+	
+	
 	def get_boards(self):
 		response = {
 			"boards": []
@@ -292,3 +307,76 @@ class Database():
 
 		return response
 
+	def new_thread(self, thread_data):
+		board_id = None
+
+		board_name_index = self.board_props_index["board_name"]
+		board_id_index = self.board_props_index["id"]
+
+		thread_id_index = self.thread_props_index["id"]
+		self.cursor.execute(self.GET_BOARDS_QUERY)
+		record = self.cursor.fetchall()
+		for item in record:
+			if item[board_name_index] == thread_data["board_name"]:
+				board_id = item[board_id_index]
+				break
+		
+		if board_id == None:
+			return "404"
+
+		creation_time = datetime.now(get_localzone())
+		creation_time = "\"" + str(creation_time)[:-6] + "\""
+
+		self.cursor.execute(self.NEW_THREAD_MUTATION.format(creation_time, creation_time, board_id, -1))
+		thread_id = self.cursor.fetchall()[0][thread_id_index]
+		
+
+		op_id = self.new_reply(thread_id, thread_data["op"])
+
+		
+		self.cursor.execute(self.UPDATE_OP_ID.format(op_id, thread_id))
+		
+		record = self.cursor.fetchall()[0]
+
+		return self.get_thread(thread_data["board_name"], thread_id)
+
+		
+	def new_reply(self, thread_id, reply_data):
+		id_index = self.reply_props_index["id"]
+
+		posted_time = datetime.now(get_localzone())
+		posted_time = "\"" + str(posted_time)[:-6] + "\""
+
+		try: 
+			reply_to = reply_data["reply_to"]
+		except:
+			reply_to = "NULL"
+
+		self.cursor.execute(self.NEW_REPLY_MUTATION.format(posted_time, reply_data["author"], reply_data["body"], reply_to,  thread_id))
+		post_id = self.cursor.fetchall()[0][id_index]
+		self.new_media(post_id, reply_data["media"])
+
+		return post_id
+
+	def new_media(self, post_id, media_list):
+		from base64 import b64decode
+		for item in media_list:
+			if ".avi" in item["filename"] or ".mkv" in item["filename"] or ".webm" in item["filename"] or ".mp4" in item["filename"]:
+				media_type = "video"
+			else:
+				media_type = "image"
+			
+			file_name = media_type + "_" + \
+			    nanoid.generate(size=8) + "_" + item["filename"]
+			file = open(file_name, 'wb')
+			file.write(b64decode(item["data"]))
+			file.close()
+
+			media_url = "/" + file_name
+
+			self.cursor.execute(self.NEW_MEDIA_MUTATION.format(post_id, media_url, media_type))
+			record = self.cursor.fetchall()
+
+		return 0
+
+db = Database("seschan.db")

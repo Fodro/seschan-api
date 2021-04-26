@@ -1,9 +1,8 @@
 from aiohttp import web
 import json
-from db import Database
+from db import db
 
 routes = web.RouteTableDef()
-db = Database("seschan.db")
 
 @routes.get("/get_boards")
 async def get_boards_handler(request: web.BaseRequest):
@@ -39,6 +38,30 @@ async def get_thread_handler(request: web.BaseRequest):
 	response = db.get_thread(board_name, thread_id)
 
 	if response == "404":
+		raise web.HTTPNotFound()
+
+	return web.json_response(response)
+
+@routes.post("/{board_name}/new_thread")
+async def new_thread_handler(request: web.BaseRequest):
+	try:
+		body = await request.json()
+		body_op = body["op"]
+		op ={
+			"author": body_op["author"],
+			"body": body_op["body"],
+			"media": body_op["media"],
+		}
+		data ={
+			"board_name": request.match_info['board_name'],
+			"op": op,
+		}	
+	except:
+		raise web.HTTPBadRequest()
+
+	response = db.new_thread(data)
+
+	if response == '404':
 		raise web.HTTPNotFound()
 
 	return web.json_response(response)
