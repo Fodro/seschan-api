@@ -1,8 +1,5 @@
 from aiohttp import web
-import json
-
-from aiohttp.web_response import Response
-from db import db
+from board.db import db
 
 routes = web.RouteTableDef()
 
