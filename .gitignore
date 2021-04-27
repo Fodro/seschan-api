@@ -1,9 +1,13 @@
-seschan*
+*.db
+*.sql
 /venv/
 /.vscode/
 /__pycache__
+*/__pycache__
 /media/
 img to bin.py
 out
 *.png
 *.jpg
+secret
+config.json
