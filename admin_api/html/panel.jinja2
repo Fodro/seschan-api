@@ -10,9 +10,34 @@
 </head>
 
 <body>
-	<form action="/logout">
-	   	<input type="submit" value='Logout' />
-	</form>
+	<div class="row">
+		<form action="/logout" class="logout">
+			<input type="submit" value='Logout' class="logout_btn"/>
+		</form>
+		<h1 class="status_header">Logged in as {{ username }} with {{ status }} rights</h1>
+	</div>
+	<hr/>
+	<div class="row">
+		<form mtehod="post" action="/new_board">
+			<h2>Create new board</h2>
+			<input type="text" name="board_name" placeholder="Short name" />
+			<input type="text" name="full_name" placeholder="Full name" />
+			<input type="submit" value="Create" />
+		</form>
+	</div>
+	<hr />
+	<div class="row">
+		<form method="post" action="/delete_board">
+			<h2>Delete board</h2>
+			<input type="text" name="board_name" placeholder="Short name" />
+			<div class="radio_row">
+				<h3>Sanity check:</h3>
+				<input type="checkbox" name="approval" id="approval" class="check"/>
+			</div>
+			<input type="submit" value="Delete" />
+		</form>
+	</div>
+	<hr/>
 	<style>
 		html {
 			width: 100%;
@@ -29,17 +54,67 @@
 		}
 		h1 {
 			color: #800000;
-			font-size: 5rem;
+			font-size: 2rem;
 		}
-		form {
+		h2 {
+			color: #800000;
+			font-size: 2rem;
+			text-align: center;
+		}
+		h3 {
+			color: #800000;
+			font-size: 1rem;
+			text-align: center;
+		}
+		.logout {
 			width: 100px;
 			height: 50px;
 		}
-		input {
+		form {
+			width: 100%;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+		}
+		.logout_btn {
 			text-align: center;
 			width: 100%;
 			height: 100%;
 			font-size: 1rem;
+		}
+		input {
+			text-align: center;
+			width: 60%;
+			height: 70px;
+			font-size: 1.5rem;
+			margin-bottom: 1%;
+		}
+		.check {
+			margin-bottom: 0.5%;
+			height: 10px;
+			width: 10px;
+			margin-left: 1%;
+		}
+		.row {
+			display: flex;
+			flex-direction: row;
+			justify-content: center;
+			align-items: center;
+			width: 100%;
+		}
+		.radio_row {
+			display: flex;
+			flex-direction: row;
+			justify-content: center;
+			align-items: center;
+			width: 60%;
+		}
+		.status_header {
+			margin-left: 2%;
+		}
+		hr {
+			width: 100%;
 		}
 	</style>
 </body>

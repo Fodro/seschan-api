@@ -14,7 +14,15 @@ async def serve_panel(request):
 		if not record:
 			response = await login_tmpl(request, {})
 			return response
-		response = await panel_tmpl(request)
+		
+		username = session['USERNAME']
+		record = list(str(admin_db.query(User).filter_by(
+				login=username).first()).split())
+		context = {
+			"username": record[0],
+			"status": record[2],
+		}
+		response = await panel_tmpl(request, context)
 		return response
 	
 	response = await login_tmpl(request, {})
@@ -51,6 +59,7 @@ async def handle_login(request: web.BaseRequest):
 	if login_data['username'] == record[0] and login_data['password'] == record[1]:
 		new_id = await auth.create_session(record[3])
 		session['SESSIONID'] = new_id
+		session['USERNAME'] = login_data['username']
 
 		response = await after_login_tmpl(request, successful_context)
 		return response

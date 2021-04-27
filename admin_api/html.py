@@ -13,9 +13,7 @@ async def after_login_tmpl(request, context):
 	response = aiohttp_jinja2.render_template('after_login.jinja2', request, context)
 	return response
 
-async def panel_tmpl(request):
-	context = {
-		"board_name": config.board_name,
-	}
+async def panel_tmpl(request, context):
+	context["board_name"] = config.board_name
 	respose = aiohttp_jinja2.render_template('panel.jinja2', request, context)
 	return respose
