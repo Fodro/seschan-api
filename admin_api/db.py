@@ -1,4 +1,3 @@
-from aiohttp_session import Session
 from sqlalchemy import Column, Integer, String,  DateTime, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -39,5 +38,5 @@ Base.metadata.create_all(engine)
 
 Database_Session = sessionmaker()
 Database_Session.configure(bind=engine)
-admin_db: Session = Database_Session()
+admin_db = Database_Session()
 
