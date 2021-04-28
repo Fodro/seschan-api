@@ -38,3 +38,11 @@ async def delete_session(id):
 		return True
 	except:
 		return False
+
+async def verify_admin_rights(username):
+	record = list(str(admin_db.query(User).filter_by(
+		login=username).first()).split())
+	if record[2] == "admin":
+		return True
+	else:
+		return False

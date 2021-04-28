@@ -32,6 +32,9 @@ class Database():
 	NEW_THREAD_MUTATION = "INSERT INTO threads (created, updated, board_id, op_id, pinned) VALUES ({},{},{},{},FALSE) RETURNING *;"
 	NEW_REPLY_MUTATION = "INSERT INTO replies (posted, author, body, reply_to, thread_id) VALUES ({},\"{}\",\"{}\",{},{}) RETURNING *;"
 	NEW_MEDIA_MUTATION = "INSERT INTO media (post_id, media_url, media_type) VALUES ({}, \"{}\", \"{}\") RETURNING *;"
+	NEW_BOARD_MUTATION = "INSERT INTO boards (board_name, created_at, created_by, full_name) VALUES(\"{}\", \"{}\", \"{}\", \"{}\");"
+
+	DELETE_BOARD_MUTATION = "DELETE FROM boards WHERE board_name=\"{}\""
 
 	UPDATE_OP_ID = "UPDATE threads SET op_id={} WHERE id={} RETURNING *;"
 
@@ -383,6 +386,21 @@ class Database():
 			record = self.cursor.fetchall()
 
 			self.sqlite_connection.commit()
+
+		return 0
+
+	def new_board(self, board_data, username):
+		creation_time = datetime.now(get_localzone())
+		creation_time = str(creation_time)[:-6]
+
+		self.cursor.execute(self.NEW_BOARD_MUTATION.format(board_data["board_name"], creation_time, username, board_data["full_name"]))
+		self.sqlite_connection.commit()
+
+		return 0
+
+	def delete_board(self, board_name):
+		self.cursor.execute(self.DELETE_BOARD_MUTATION.format(board_name))
+		self.sqlite_connection.commit()
 
 		return 0
 
