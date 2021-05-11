@@ -4,6 +4,7 @@ from admin_api.db import *
 from board.db import db
 from admin_api.html import *
 import admin_api.auth as auth
+import nanoid
 
 routes = web.RouteTableDef()
 
@@ -164,6 +165,92 @@ async def handle_delete_board(request):
 				response = await after_login_tmpl(request, failed_context)
 				return response
 			db.delete_board(board_data["board_name"])
+			response = await after_login_tmpl(request, successful_context)
+			return response
+		except:
+			response = await after_login_tmpl(request, failed_context)
+			return response
+
+	response = await after_login_tmpl(request, failed_context)
+	return response
+
+@routes.post("/create-admin")
+async def handle_create_admin(request):
+	session = await get_session(request)
+
+	failed_context = {
+            'title': 'Action error',
+            'header': 'Action failed',
+            'button': 'Return',
+        }
+
+	successful_context = {
+            'title': 'Creation successful',
+            'header': 'Successful',
+            'button': 'Return to panel',
+	}
+
+	if 'SESSIONID' in session:
+		record = await auth.verify_session(session['SESSIONID'])
+		is_owner = await auth.verify_owner_rights(session['USERNAME'])
+		if not record or not is_owner:
+			response = await after_login_tmpl(request, failed_context)
+			return response
+		try:
+			body = await request.read()
+			decoded_body = body.decode('utf-8').split("&")
+			user_data = {}
+			for item in decoded_body:
+				entry = list(item.split("="))
+				user_data[entry[0]] = entry[1].replace("+", " ")
+			new_user = User(login=user_data["login"], password=user_data["password"], permission=user_data["permission"])
+			admin_db.add(new_user)
+			admin_db.commit()
+			response = await after_login_tmpl(request, successful_context)
+			return response
+		except:
+			response = await after_login_tmpl(request, failed_context)
+			return response
+		
+
+	response = await after_login_tmpl(request, failed_context)
+	return response
+
+@routes.post("/delete-admin")
+async def handle_delete_admin(request):
+	session = await get_session(request)
+	is_owner = await auth.verify_owner_rights(session['USERNAME'])
+
+	failed_context = {
+            'title': 'Action error',
+            'header': 'Action failed',
+            'button': 'Return',
+        }
+
+	successful_context = {
+            'title': 'Deletion successful',
+            'header': 'Successful',
+            'button': 'Return to panel',
+	}
+
+	if 'SESSIONID' in session:
+		record = await auth.verify_session(session['SESSIONID'])
+		is_owner = await auth.verify_owner_rights(session['USERNAME'])
+		if not record or not is_owner:
+			response = await after_login_tmpl(request, failed_context)
+			return response
+		try:
+			body = await request.read()
+			decoded_body = body.decode('utf-8').split("&")
+			user_data = {}
+			for item in decoded_body:
+				entry = list(item.split("="))
+				user_data[entry[0]] = entry[1].replace("+", " ")
+			if user_data["approval"] != "on":
+				response = await after_login_tmpl(request, failed_context)
+				return response
+			admin_db.query(User).filter_by(login=user_data["login"]).delete()
+			admin_db.commit()
 			response = await after_login_tmpl(request, successful_context)
 			return response
 		except:
