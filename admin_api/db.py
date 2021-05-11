@@ -4,7 +4,6 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from sqlalchemy.sql.sqltypes import Date
 from tzlocal import get_localzone
-import nanoid
 
 engine = create_engine('sqlite:///admin.db', echo=True)
 Base = declarative_base()

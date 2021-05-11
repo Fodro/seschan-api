@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from admin_api.db import *
 from datetime import datetime
+import nanoid
 
 async def verify_session(id):
 	record = list(str(admin_db.query(Auth_session).filter_by(
@@ -42,7 +43,16 @@ async def delete_session(id):
 async def verify_admin_rights(username):
 	record = list(str(admin_db.query(User).filter_by(
 		login=username).first()).split())
-	if record[2] == "admin":
+	if record[2] == "admin" or record[2] == "owner":
+		return True
+	else:
+		return False
+
+
+async def verify_owner_rights(username):
+	record = list(str(admin_db.query(User).filter_by(
+		login=username).first()).split())
+	if record[2] == "owner":
 		return True
 	else:
 		return False

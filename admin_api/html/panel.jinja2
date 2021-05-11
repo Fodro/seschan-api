@@ -17,6 +17,7 @@
 		<h1 class="status_header">Logged in as {{ username }} with {{ status }} rights</h1>
 	</div>
 	<hr/>
+	{% if status=="admin" or status=="owner" %}
 	<div class="options_row">
 		<form method="post" action="/new_board">
 			<h2>Create new board</h2>
@@ -35,6 +36,39 @@
 		</form>
 	</div>
 	<hr />
+	{% endif %}
+	{% if status == "owner" %}
+	<div class="options_row">
+		<form method="post" action="/create-admin">
+			<h2>Create new admin</h2>
+			<input type="text" name="login" placeholder="Login" />
+			<input type="password" name="password" placeholder="Password" />
+			<div class="radio_row">
+				<input type="radio" id="owner" name="permission" value="owner">
+				<label for="owner">Owner</label>
+			</div>
+			<div class="radio_row">
+				<input type="radio" id="admin" name="permission" value="admin">
+				<label for="admin">Admin</label>
+			</div>
+			<div class="radio_row">
+				<input type="radio" id="mod" name="permission" value="mod">
+				<label for="mod">Mod</label>
+			</div>
+			<input type="submit" value="Create" />
+		</form>
+		<form method="post" action="/delete-admin">
+			<h2>Delete admin</h2>
+			<input type="text" name="login" placeholder="Login" />
+			<div class="radio_row">
+				<h3>Sanity check:</h3>
+				<input type="checkbox" name="approval" id="approval" class="check"/>
+			</div>
+			<input type="submit" value="Delete" />
+		</form>
+	</div>
+	<hr />
+	{% endif %}
 	<style>
 		html {
 			width: 100%;
@@ -110,6 +144,21 @@
 			width: 100%;
 
 		}
+
+		.radio_row {
+			display: flex;
+			flex-direction: row;
+			justify-content: center;
+			align-items: center;
+			width: 10%;
+			height: 60px;
+		}
+		.status_header {
+			margin-left: 2%;
+		}
+		hr {
+			width: 100%;
+		}
 		@media (max-width: 800px) {
 			h1 {
 				font-size: 1rem;
@@ -128,19 +177,6 @@
 				width: 60%;
 			}
 		},
-		.radio_row {
-			display: flex;
-			flex-direction: row;
-			justify-content: center;
-			align-items: center;
-			width: 60%;
-		}
-		.status_header {
-			margin-left: 2%;
-		}
-		hr {
-			width: 100%;
-		}
 	</style>
 </body>
 </html>
